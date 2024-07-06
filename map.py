@@ -1,3 +1,4 @@
+from flask import Flask, render_template_string
 from pyproj import Transformer
 
 import folium
@@ -29,39 +30,62 @@ geojson_data = gdf.to_json()
 combined_shape = gdf.union_all()
 combined_centroid = combined_shape.centroid
 
-# Note the coordinates have to be reversed
-m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
+app = Flask(__name__)
 
-tooltip = folium.GeoJsonTooltip(
-    fields=['descriptiv'],
-    aliases=[''],
-    sticky=False,
-    style=(
-        "background-color: white; color: black; font-family: arial; font-size: 16px; padding: -2px;"
-    ),
-)
+@app.route("/")
+def iframe():
+    # Note the coordinates have to be reversed
+    m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
 
-choropleth = folium.Choropleth(
-    geo_data=geojson_data,
-    data=joined,
-    key_on='id',
-    fill_color='RdYlGn_r',
-    use_jenks=True,
-)
-choropleth.add_to(m)
-choropleth.color_scale.width = 1200
+    tooltip = folium.GeoJsonTooltip(
+        fields=['descriptiv'],
+        aliases=[''],
+        sticky=False,
+        style=(
+            "background-color: white; color: black; font-family: arial; font-size: 16px; padding: -2px;"
+        ),
+    )
 
-folium.GeoJson(
-    geojson_data,
-    name='geojson',
-    tooltip=tooltip,
-    style_function=lambda feature: {
-        'fillOpacity': 0.0,
-        'opacity': 0.0
-    }
-).add_to(m)
+    choropleth = folium.Choropleth(
+        geo_data=geojson_data,
+        data=joined,
+        key_on='id',
+        fill_color='RdYlGn_r',
+        use_jenks=True,
+    )
+    choropleth.add_to(m)
+    choropleth.color_scale.width = 1000
 
-folium.LayerControl().add_to(m)
+    folium.GeoJson(
+        geojson_data,
+        name='geojson',
+        tooltip=tooltip,
+        style_function=lambda feature: {
+            'fillOpacity': 0.0,
+            'opacity': 0.0
+        }
+    ).add_to(m)
 
-map_file = "map.html"
-m.save(map_file)
+    folium.LayerControl().add_to(m)
+
+    # set the iframe width and height
+    m.get_root().width = "1100px"
+    m.get_root().height = "1000px"
+    iframe = m.get_root()._repr_html_()
+
+    return render_template_string(
+        """
+            <!DOCTYPE html>
+            <html>
+                <head></head>
+                <body>
+                    <h1>Using an iframe</h1>
+                    {{ iframe|safe }}
+                </body>
+            </html>
+        """,
+        iframe=iframe,
+    )
+
+if __name__ == "__main__":
+    app.run(debug=True)

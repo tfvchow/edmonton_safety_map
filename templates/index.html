@@ -18,19 +18,23 @@
   <div class="row">
     <div class="col-md-5">
       <h1>Edmonton Safety Map</h1>
+      <p>Choose incident categories (broadest), groups, and types (finest) to display on the map. All will be displayed if none are selected. Multiple selections are allowed.</p>
       <form action="/" method="post">
+        <strong>Incident Categories</strong>
         <select class="custom-select mb-3" name="categories" multiple size="7">
           {% for category in categories %}
             <option value="{{ category }}" {% if category in selected_categories %}selected{% endif %}>{{ category }}</option>
           {% endfor %}
         </select>
         <br>
+        <strong>Incident Groups</strong>
         <select class="custom-select mb-3" name="groups" multiple size="10">
           {% for group in groups %}
             <option value="{{ group }}" {% if group in selected_groups %}selected{% endif %}>{{ group }}</option>
           {% endfor %}
         </select>
         <br>
+        <strong>Incident Types</strong>
         <select class="custom-select mb-3" name="type_groups" multiple size="10">
           {% for type_group in type_groups %}
             <option value="{{ type_group }}" {% if type_group in selected_type_groups %}selected{% endif %}>{{ type_group }}</option>

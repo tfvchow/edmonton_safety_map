@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template, request
 from pyproj import Transformer
 
 import folium
@@ -21,7 +21,6 @@ points = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data.coordinates.str
 
 # Spatial join - points to shapes
 joined = gpd.sjoin(points, gdf, how="inner", predicate="within")
-joined = joined.groupby('neighbourh')["Occurrence_Type_Group"].count()
 
 # Convert the GeoDataFrame to GeoJSON
 geojson_data = gdf.to_json()
@@ -32,10 +31,40 @@ combined_centroid = combined_shape.centroid
 
 app = Flask(__name__)
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def iframe():
     # Note the coordinates have to be reversed
     m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
+
+    neighborhoods_id = gdf.index.to_list()
+    neighborhoods_name = gdf["descriptiv"].to_list()
+    neighborhoods = sorted(zip(neighborhoods_id, neighborhoods_name), key=lambda x: x[1])
+
+    categories = sorted(data["Occurrence_Category"].unique())
+    groups = sorted(data["Occurrence_Group"].unique())
+    type_groups = sorted(data["Occurrence_Type_Group"].unique())
+
+    selected_neighborhoods = request.form.getlist('neighborhoods')
+    selected_categories = request.form.getlist('categories')
+    selected_groups = request.form.getlist('groups')
+    selected_type_groups = request.form.getlist('type_groups')
+
+    filtered = joined
+
+    if selected_neighborhoods:
+        selected_neighborhoods = [int(n) for n in selected_neighborhoods]
+        filtered = filtered[~filtered["neighbourh"].isin(selected_neighborhoods)]
+
+    if selected_categories:
+        filtered = filtered[filtered["Occurrence_Category"].isin(selected_categories)]
+
+    if selected_groups:
+        filtered = filtered[filtered["Occurrence_Group"].isin(selected_groups)]
+
+    if selected_type_groups:
+        filtered = filtered[filtered["Occurrence_Type_Group"].isin(selected_type_groups)]
+        
+    filtered = filtered.groupby('neighbourh')["Occurrence_Type_Group"].count()
 
     tooltip = folium.GeoJsonTooltip(
         fields=['descriptiv'],
@@ -46,13 +75,22 @@ def iframe():
         ),
     )
 
-    choropleth = folium.Choropleth(
-        geo_data=geojson_data,
-        data=joined,
-        key_on='id',
-        fill_color='RdYlGn_r',
-        use_jenks=True,
-    )
+    try:
+        choropleth = folium.Choropleth(
+            geo_data=geojson_data,
+            data=filtered,
+            key_on='id',
+            fill_color='RdYlGn_r',
+            use_jenks=True,
+        )
+    except ValueError:
+        choropleth = folium.Choropleth(
+            geo_data=geojson_data,
+            data=filtered,
+            key_on='id',
+            fill_color='RdYlGn_r',
+        )
+        
     choropleth.add_to(m)
     choropleth.color_scale.width = 1000
 
@@ -73,19 +111,15 @@ def iframe():
     m.get_root().height = "1000px"
     iframe = m.get_root()._repr_html_()
 
-    return render_template_string(
-        """
-            <!DOCTYPE html>
-            <html>
-                <head></head>
-                <body>
-                    <h1>Using an iframe</h1>
-                    {{ iframe|safe }}
-                </body>
-            </html>
-        """,
-        iframe=iframe,
-    )
+    return render_template('index.html', 
+                           neighborhoods=neighborhoods,
+                           categories=categories,
+                           groups=groups,
+                           type_groups=type_groups,
+                           selected_neighborhoods=selected_neighborhoods,selected_categories=selected_categories,
+                           selected_groups=selected_groups,
+                           selected_type_groups=selected_type_groups,
+                           iframe=iframe)
 
 if __name__ == "__main__":
     app.run(debug=True)

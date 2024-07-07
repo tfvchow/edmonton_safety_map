@@ -36,24 +36,15 @@ def iframe():
     # Note the coordinates have to be reversed
     m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
 
-    neighborhoods_id = gdf.index.to_list()
-    neighborhoods_name = gdf["descriptiv"].to_list()
-    neighborhoods = sorted(zip(neighborhoods_id, neighborhoods_name), key=lambda x: x[1])
-
     categories = sorted(data["Occurrence_Category"].unique())
     groups = sorted(data["Occurrence_Group"].unique())
     type_groups = sorted(data["Occurrence_Type_Group"].unique())
 
-    selected_neighborhoods = request.form.getlist('neighborhoods')
     selected_categories = request.form.getlist('categories')
     selected_groups = request.form.getlist('groups')
     selected_type_groups = request.form.getlist('type_groups')
 
     filtered = joined
-
-    if selected_neighborhoods:
-        selected_neighborhoods = [int(n) for n in selected_neighborhoods]
-        filtered = filtered[~filtered["neighbourh"].isin(selected_neighborhoods)]
 
     if selected_categories:
         filtered = filtered[filtered["Occurrence_Category"].isin(selected_categories)]
@@ -112,11 +103,10 @@ def iframe():
     iframe = m.get_root()._repr_html_()
 
     return render_template('index.html', 
-                           neighborhoods=neighborhoods,
                            categories=categories,
                            groups=groups,
                            type_groups=type_groups,
-                           selected_neighborhoods=selected_neighborhoods,selected_categories=selected_categories,
+                           selected_categories=selected_categories,
                            selected_groups=selected_groups,
                            selected_type_groups=selected_type_groups,
                            iframe=iframe)

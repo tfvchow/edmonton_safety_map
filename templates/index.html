@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+  <style>
+    option {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container ml-1">
+  <div class="row">
+    <div class="col-md-5">
+      <h1>Edmonton Safety Map</h1>
+      <form action="/" method="post">
+        <select class="custom-select mb-3" name="neighborhoods" multiple size="10">
+          {% for id, name in neighborhoods %}
+            <option value="{{ id }}" {% if id in selected_neighborhoods %}selected{% endif %}>{{ name }}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <select class="custom-select mb-3" name="categories" multiple size="7">
+          {% for category in categories %}
+            <option value="{{ category }}" {% if category in selected_categories %}selected{% endif %}>{{ category }}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <select class="custom-select mb-3" name="groups" multiple size="10">
+          {% for group in groups %}
+            <option value="{{ group }}" {% if group in selected_groups %}selected{% endif %}>{{ group }}</option>
+          {% endfor %}
+        </select>
+        <br>
+        <select class="custom-select mb-3" name="type_groups" multiple size="10">
+          {% for type_group in type_groups %}
+            <option value="{{ type_group }}" {% if type_group in selected_type_groups %}selected{% endif %}>{{ type_group }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Select</button>
+      </form>
+    </div>
+    <div class="col-md-7">
+      {{ iframe|safe }}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

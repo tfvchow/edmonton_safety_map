@@ -1,6 +1,4 @@
 flask
-geopandas
 folium
-pandas
-pyproj
-gunicorn
+shapely
+pyshp

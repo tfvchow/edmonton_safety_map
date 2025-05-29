@@ -83,7 +83,10 @@ def iframe():
         )
         
     choropleth.add_to(m)
-    choropleth.color_scale.width = 1000
+    # ensure the color scale (legend) shows up on the map
+    choropleth.color_scale.caption = "Number of Incidents"
+    choropleth.color_scale.width = 300
+    m.add_child(choropleth.color_scale)
 
     folium.GeoJson(
         geojson_data,
@@ -97,9 +100,9 @@ def iframe():
 
     folium.LayerControl().add_to(m)
 
-    # set the iframe width and height
-    m.get_root().width = "1100px"
-    m.get_root().height = "1000px"
+    # make the iframe responsive
+    m.get_root().width = "100%"
+    m.get_root().height = "75vh"
     iframe = m.get_root()._repr_html_()
 
     return render_template('index.html', 

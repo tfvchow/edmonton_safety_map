@@ -34,7 +34,12 @@ app = Flask(__name__)
 @app.route("/", methods=['GET', 'POST'])
 def iframe():
     # Note the coordinates have to be reversed
-    m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
+    m = folium.Map(
+        location=[combined_centroid.y, combined_centroid.x],
+        zoom_start=11,
+        width="100%",
+        height="75vh",
+    )
 
     categories = sorted(data["Occurrence_Category"].unique())
     groups = sorted(data["Occurrence_Group"].unique())
@@ -83,7 +88,10 @@ def iframe():
         )
         
     choropleth.add_to(m)
-    choropleth.color_scale.width = 1000
+    # ensure the color scale (legend) shows up on the map
+    choropleth.color_scale.caption = "Number of Incidents"
+    choropleth.color_scale.width = 300
+    m.add_child(choropleth.color_scale)
 
     folium.GeoJson(
         geojson_data,
@@ -97,10 +105,7 @@ def iframe():
 
     folium.LayerControl().add_to(m)
 
-    # set the iframe width and height
-    m.get_root().width = "1100px"
-    m.get_root().height = "1000px"
-    iframe = m.get_root()._repr_html_()
+    iframe = m._repr_html_()
 
     return render_template('index.html', 
                            categories=categories,

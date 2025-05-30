@@ -66,24 +66,40 @@ def iframe():
     selected_categories = request.form.getlist("categories") if filter_by == "categories" else []
     selected_type_groups = request.form.getlist("type_groups") if filter_by == "type_groups" else []
 
-    filtered = joined
+    filtered_events = joined
 
     # Apply exactly one filter based on the active radio selection.
     if selected_categories:
-        filtered = filtered[filtered["Occurrence_Category"].isin(selected_categories)]
+        filtered_events = filtered_events[filtered_events["Occurrence_Category"].isin(selected_categories)]
     elif selected_type_groups:
-        filtered = filtered[filtered["Occurrence_Type_Group"].isin(selected_type_groups)]
-        
-    filtered = filtered.groupby('neighbourh')["Occurrence_Type_Group"].count()
+        filtered_events = filtered_events[filtered_events["Occurrence_Type_Group"].isin(selected_type_groups)]
+    counts_by_neighbour = filtered_events.groupby("neighbourh")["Occurrence_Type_Group"].count()
+
+    top_types_df = (
+        filtered_events.groupby(["neighbourh", "Occurrence_Type_Group"])\
+        .size()\
+        .reset_index(name="count")
+    )
+    top_types_mapping = (
+        top_types_df.sort_values(["neighbourh", "count"], ascending=[True, False])
+        .groupby("neighbourh")
+        .apply(
+            lambda df: "<br>".join(
+                f"{row['Occurrence_Type_Group']}: {row['count']}" for _, row in df.head(5).iterrows()
+            )
+        )
+        .to_dict()
+    )
 
     gdf_counts = gdf.copy()
-    gdf_counts["count"] = filtered
+    gdf_counts["count"] = counts_by_neighbour
     gdf_counts["count"] = gdf_counts["count"].fillna(0).astype(int)
+    gdf_counts["top_types"] = gdf_counts.index.map(top_types_mapping).fillna("")
     geojson_data = gdf_counts.to_json()
 
     tooltip = folium.GeoJsonTooltip(
-        fields=["descriptiv", "count"],
-        aliases=["Community", "Incidents"],
+        fields=["descriptiv", "count", "top_types"],
+        aliases=["Community", "Incidents", "Top Types"],
         sticky=False,
         style=(
             "background-color: white; color: black; font-family: arial; font-size: 16px; padding: -2px;"
@@ -93,7 +109,7 @@ def iframe():
     try:
         choropleth = folium.Choropleth(
             geo_data=geojson_data,
-            data=filtered,
+            data=counts_by_neighbour,
             key_on='id',
             fill_color='RdYlGn_r',
             use_jenks=True,
@@ -101,7 +117,7 @@ def iframe():
     except ValueError:
         choropleth = folium.Choropleth(
             geo_data=geojson_data,
-            data=filtered,
+            data=counts_by_neighbour,
             key_on='id',
             fill_color='RdYlGn_r',
         )

@@ -10,11 +10,21 @@
     option {
       color: black;
     }
+    #map-container {
+      height: 70vh;
+    }
+    #map-container > * {
+      height: 100% !important;
+      width: 100% !important;
+    }
+    #legend-container {
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
 
-<div class="container ml-1">
+<div class="container-fluid ml-1">
   <div class="row">
     <div class="col-md-5">
       <h1>Edmonton Safety Map</h1>
@@ -44,10 +54,27 @@
       </form>
     </div>
     <div class="col-md-7">
-      {{ iframe|safe }}
+      <div id="map-container">
+        {{ iframe|safe }}
+      </div>
+      <div id="legend-container">
+        {{ legend|safe }}
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+  function sizeLegend() {
+    const map = document.querySelector('#map-container').firstElementChild;
+    const legendSvg = document.querySelector('#legend-container svg');
+    if (map && legendSvg) {
+      legendSvg.style.width = map.clientWidth + 'px';
+    }
+  }
+  window.addEventListener('load', sizeLegend);
+  window.addEventListener('resize', sizeLegend);
+</script>
 
 </body>
 </html>

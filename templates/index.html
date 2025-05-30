@@ -30,6 +30,17 @@
       <h1>Edmonton Safety Map</h1>
       <p>Choose incident categories (broadest), groups, and types (finest) to display on the map. All will be displayed if none are selected. Multiple selections are allowed.</p>
       <form action="/" method="post">
+        <div class="mb-3">
+          <label for="year"><strong>Data Year</strong></label>
+          <select id="year" class="custom-select" name="year" onchange="this.form.submit()">
+            {% for y in years %}
+              <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div id="loading-spinner" class="text-center mb-2" style="display:none;">
+          <div class="spinner-border" role="status"></div>
+        </div>
         <strong>Incident Categories</strong>
         <select class="custom-select mb-3" name="categories" multiple size="7">
           {% for category in categories %}
@@ -74,6 +85,10 @@
   }
   window.addEventListener('load', sizeLegend);
   window.addEventListener('resize', sizeLegend);
+
+  document.querySelector('form').addEventListener('submit', function() {
+    document.getElementById('loading-spinner').style.display = 'block';
+  });
 </script>
 
 </body>

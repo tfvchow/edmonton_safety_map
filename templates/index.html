@@ -3,20 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Edmonton Safety Map</title>
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
   <style>
+    body {
+      background-color: #f5f5f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #212529;
+    }
+
     option {
       color: black;
     }
+
+    .card {
+      margin-bottom: 1.5rem;
+    }
+
     #map-container {
       height: 70vh;
+      border-radius: .25rem;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
     #map-container > * {
       height: 100% !important;
       width: 100% !important;
     }
+
     #legend-container {
       margin-top: 1rem;
     }
@@ -25,11 +41,18 @@
 <body>
 
 <div class="container-fluid ml-1">
-  <div class="row">
+  <div class="row mt-4">
     <div class="col-md-5">
-      <h1>Edmonton Safety Map</h1>
-      <p>Choose incident categories (broadest), groups, and types (finest) to display on the map. All will be displayed if none are selected. Multiple selections are allowed.</p>
-      <form action="/" method="post">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h1 class="h3 mb-3">Edmonton Safety Map</h1>
+          <p class="text-muted">
+            Use the filters below to explore incident reports across Edmonton. Select
+            a data year and optionally narrow by category, group, or type. Leave the
+            lists empty to view all reports. Data for 2022–2024 represent complete
+            years, while 2025 contains incidents up to May&nbsp;17 only.
+          </p>
+          <form action="/" method="post">
         <div class="mb-3">
           <label for="year"><strong>Data Year</strong></label>
           <select id="year" class="custom-select" name="year" onchange="this.form.submit()">
@@ -62,14 +85,20 @@
           {% endfor %}
         </select>
         <button type="submit" class="btn btn-primary">Select</button>
-      </form>
+        </form>
+        </div>
+      </div>
     </div>
     <div class="col-md-7">
-      <div id="map-container">
-        {{ iframe|safe }}
-      </div>
-      <div id="legend-container">
-        {{ legend|safe }}
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div id="map-container">
+            {{ iframe|safe }}
+          </div>
+          <div id="legend-container">
+            {{ legend|safe }}
+          </div>
+        </div>
       </div>
     </div>
   </div>

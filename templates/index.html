@@ -39,6 +39,10 @@
     #legend-container {
       margin-top: 1rem;
     }
+
+    .tooltip-inner {
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -76,19 +80,30 @@
         <div id="loading-spinner" class="text-center mb-2" style="display:none;">
           <div class="spinner-border" role="status"></div>
         </div>
-        <strong>Incident Categories</strong>
-        <select class="custom-select mb-3" name="categories" multiple size="7">
-          {% for category in categories %}
-            <option value="{{ category }}" {% if category in selected_categories %}selected{% endif %}>{{ category }}</option>
-          {% endfor %}
-        </select>
-        <br>
-        <strong>Incident Types</strong>
-        <select class="custom-select mb-3" name="type_groups" multiple size="10">
-          {% for type_group in type_groups %}
-            <option value="{{ type_group }}" {% if type_group in selected_type_groups %}selected{% endif %}>{{ type_group }}</option>
-          {% endfor %}
-        </select>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="filter_by" id="filter-categories" value="categories" {% if filter_by == 'categories' %}checked{% endif %} onchange="toggleFilters()">
+          <label class="form-check-label" for="filter-categories"><strong>Categories</strong></label>
+        </div>
+        <div class="form-check form-check-inline mb-3">
+          <input class="form-check-input" type="radio" name="filter_by" id="filter-types" value="type_groups" {% if filter_by == 'type_groups' %}checked{% endif %} onchange="toggleFilters()">
+          <label class="form-check-label" for="filter-types"><strong>Types</strong></label>
+        </div>
+
+        <div id="categories-select">
+          <select class="custom-select mb-3" name="categories" multiple size="7">
+            {% for category in categories %}
+              <option value="{{ category }}" {% if category in selected_categories %}selected{% endif %}>{{ category }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div id="types-select">
+          <select class="custom-select mb-3" name="type_groups" multiple size="10">
+            {% for type_group in type_groups %}
+              <option value="{{ type_group }}" {% if type_group in selected_type_groups %}selected{% endif %}>{{ type_group }}</option>
+            {% endfor %}
+          </select>
+        </div>
         <button type="submit" class="btn btn-primary">Select</button>
         </form>
         </div>
@@ -117,8 +132,15 @@
       legendSvg.style.width = map.clientWidth + 'px';
     }
   }
+
+  function toggleFilters() {
+    const filter = document.querySelector('input[name="filter_by"]:checked').value;
+    document.getElementById('categories-select').style.display = filter === 'categories' ? 'block' : 'none';
+    document.getElementById('types-select').style.display = filter === 'type_groups' ? 'block' : 'none';
+  }
   window.addEventListener('load', sizeLegend);
   window.addEventListener('resize', sizeLegend);
+  window.addEventListener('load', toggleFilters);
 
   document.querySelector('form').addEventListener('submit', function() {
     document.getElementById('loading-spinner').style.display = 'block';

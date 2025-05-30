@@ -80,16 +80,21 @@ def iframe():
         .size()\
         .reset_index(name="count")
     )
-    top_types_mapping = (
-        top_types_df.sort_values(["neighbourh", "count"], ascending=[True, False])
-        .groupby("neighbourh")
-        .apply(
-            lambda df: "<br>".join(
-                f"{row['Occurrence_Type_Group']}: {row['count']}" for _, row in df.head(5).iterrows()
+    # Build HTML tables showing the top 5 incident types per neighbourhood.
+    sorted_types = top_types_df.sort_values(["neighbourh", "count"], ascending=[True, False])
+    top_types_mapping = {}
+    for neigh, df_n in sorted_types.groupby("neighbourh"):
+        total = counts_by_neighbour.get(neigh, 0)
+        header = "<table style='border-collapse:collapse'>"
+        header += "<tr><th>Type</th><th>Count</th><th>%</th></tr>"
+        rows = []
+        for _, row in df_n.head(5).iterrows():
+            pct = (row["count"] / total * 100) if total else 0
+            rows.append(
+                f"<tr><td>{row['Occurrence_Type_Group']}</td><td>{row['count']}</td><td>{pct:.1f}%</td></tr>"
             )
-        )
-        .to_dict()
-    )
+        table = header + "".join(rows) + "</table>"
+        top_types_mapping[neigh] = table
 
     gdf_counts = gdf.copy()
     gdf_counts["count"] = counts_by_neighbour

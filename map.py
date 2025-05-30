@@ -60,22 +60,19 @@ def iframe():
 
     data = joined.drop(columns="geometry")
     categories = sorted(data["Occurrence_Category"].unique())
-    groups = sorted(data["Occurrence_Group"].unique())
     type_groups = sorted(data["Occurrence_Type_Group"].unique())
 
     selected_categories = request.form.getlist('categories')
-    selected_groups = request.form.getlist('groups')
     selected_type_groups = request.form.getlist('type_groups')
 
     filtered = joined
 
+    # Apply exactly one filter. If categories are selected, filter by category.
+    # Otherwise if types are selected, filter by type. Selecting both is treated
+    # the same as selecting categories only.
     if selected_categories:
         filtered = filtered[filtered["Occurrence_Category"].isin(selected_categories)]
-
-    if selected_groups:
-        filtered = filtered[filtered["Occurrence_Group"].isin(selected_groups)]
-
-    if selected_type_groups:
+    elif selected_type_groups:
         filtered = filtered[filtered["Occurrence_Type_Group"].isin(selected_type_groups)]
         
     filtered = filtered.groupby('neighbourh')["Occurrence_Type_Group"].count()
@@ -128,10 +125,8 @@ def iframe():
         years=YEARS,
         selected_year=selected_year,
         categories=categories,
-        groups=groups,
         type_groups=type_groups,
         selected_categories=selected_categories,
-        selected_groups=selected_groups,
         selected_type_groups=selected_type_groups,
         iframe=iframe,
         legend=legend_html,

@@ -11,16 +11,21 @@ gdf = gdf.set_crs('EPSG:4326', allow_override=True).to_crs('EPSG:4326')
 gdf["neighbourh"] = gdf["neighbourh"].astype(int)
 gdf.set_index("neighbourh", inplace=True)
 
-# Load CSV data
-data_path = "./data/edmonton_safety_data.csv"
-data = pd.read_csv(data_path)
-
+YEARS = ["2022", "2023", "2024", "2025"]
 transformer = Transformer.from_crs(3857, 4326)
-data['coordinates'] = data.apply(lambda x: transformer.transform(x['x'], x['y']), axis=1)
-points = gpd.GeoDataFrame(data, geometry=gpd.points_from_xy(data.coordinates.str[1], data.coordinates.str[0]))
 
-# Spatial join - points to shapes
-joined = gpd.sjoin(points, gdf, how="inner", predicate="within")
+def load_data(year: str) -> gpd.GeoDataFrame:
+    """Load the CSV data for the provided year and spatially join it."""
+    data_path = f"./data/edmonton_safety_data_{year}.csv"
+    data = pd.read_csv(data_path)
+    data["coordinates"] = data.apply(
+        lambda x: transformer.transform(x["x"], x["y"]), axis=1
+    )
+    points = gpd.GeoDataFrame(
+        data, geometry=gpd.points_from_xy(data.coordinates.str[1], data.coordinates.str[0])
+    )
+    joined = gpd.sjoin(points, gdf, how="inner", predicate="within")
+    return joined
 
 # Convert the GeoDataFrame to GeoJSON
 geojson_data = gdf.to_json()
@@ -33,9 +38,13 @@ app = Flask(__name__)
 
 @app.route("/", methods=['GET', 'POST'])
 def iframe():
+    selected_year = request.form.get("year", YEARS[-1])
+    joined = load_data(selected_year)
+
     # Note the coordinates have to be reversed
     m = folium.Map(location=[combined_centroid.y, combined_centroid.x], zoom_start=11)
 
+    data = joined.drop(columns="geometry")
     categories = sorted(data["Occurrence_Category"].unique())
     groups = sorted(data["Occurrence_Group"].unique())
     type_groups = sorted(data["Occurrence_Type_Group"].unique())
@@ -103,15 +112,19 @@ def iframe():
     m.get_root().height = "100%"
     iframe = m.get_root()._repr_html_()
 
-    return render_template('index.html', 
-                           categories=categories,
-                           groups=groups,
-                           type_groups=type_groups,
-                           selected_categories=selected_categories,
-                           selected_groups=selected_groups,
-                           selected_type_groups=selected_type_groups,
-                           iframe=iframe,
-                           legend=legend_html)
+    return render_template(
+        'index.html',
+        years=YEARS,
+        selected_year=selected_year,
+        categories=categories,
+        groups=groups,
+        type_groups=type_groups,
+        selected_categories=selected_categories,
+        selected_groups=selected_groups,
+        selected_type_groups=selected_type_groups,
+        iframe=iframe,
+        legend=legend_html,
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

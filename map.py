@@ -43,8 +43,6 @@ def load_data(year: str) -> gpd.GeoDataFrame:
     joined = gpd.sjoin(points, gdf, how="inner", predicate="within")
     return joined
 
-# Convert the GeoDataFrame to GeoJSON
-geojson_data = gdf.to_json()
 
 # Combine all shapes into a single geometry and calculate the centroid
 combined_shape = gdf.union_all()
@@ -82,9 +80,14 @@ def iframe():
         
     filtered = filtered.groupby('neighbourh')["Occurrence_Type_Group"].count()
 
+    gdf_counts = gdf.copy()
+    gdf_counts["count"] = filtered
+    gdf_counts["count"] = gdf_counts["count"].fillna(0).astype(int)
+    geojson_data = gdf_counts.to_json()
+
     tooltip = folium.GeoJsonTooltip(
-        fields=['descriptiv'],
-        aliases=[''],
+        fields=["descriptiv", "count"],
+        aliases=["Community", "Incidents"],
         sticky=False,
         style=(
             "background-color: white; color: black; font-family: arial; font-size: 16px; padding: -2px;"
@@ -108,18 +111,10 @@ def iframe():
         )
         
     choropleth.add_to(m)
+    choropleth.geojson.add_child(tooltip)
     choropleth.color_scale.caption = "Incident Count"
     legend_html = choropleth.color_scale._repr_html_()
 
-    folium.GeoJson(
-        geojson_data,
-        name='geojson',
-        tooltip=tooltip,
-        style_function=lambda feature: {
-            'fillOpacity': 0.0,
-            'opacity': 0.0
-        }
-    ).add_to(m)
 
     folium.LayerControl().add_to(m)
 

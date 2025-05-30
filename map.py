@@ -53,6 +53,7 @@ app = Flask(__name__)
 @app.route("/", methods=['GET', 'POST'])
 def iframe():
     selected_year = request.form.get("year", YEARS[-1])
+    filter_by = request.form.get("filter_by", "categories")
     joined = load_data(selected_year)
 
     # Note the coordinates have to be reversed
@@ -62,14 +63,12 @@ def iframe():
     categories = sorted(data["Occurrence_Category"].unique())
     type_groups = sorted(data["Occurrence_Type_Group"].unique())
 
-    selected_categories = request.form.getlist('categories')
-    selected_type_groups = request.form.getlist('type_groups')
+    selected_categories = request.form.getlist("categories") if filter_by == "categories" else []
+    selected_type_groups = request.form.getlist("type_groups") if filter_by == "type_groups" else []
 
     filtered = joined
 
-    # Apply exactly one filter. If categories are selected, filter by category.
-    # Otherwise if types are selected, filter by type. Selecting both is treated
-    # the same as selecting categories only.
+    # Apply exactly one filter based on the active radio selection.
     if selected_categories:
         filtered = filtered[filtered["Occurrence_Category"].isin(selected_categories)]
     elif selected_type_groups:
@@ -126,6 +125,7 @@ def iframe():
         selected_year=selected_year,
         categories=categories,
         type_groups=type_groups,
+        filter_by=filter_by,
         selected_categories=selected_categories,
         selected_type_groups=selected_type_groups,
         iframe=iframe,

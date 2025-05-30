@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from pyproj import Transformer
+
 
 import folium
 import geopandas as gpd
@@ -12,18 +12,34 @@ gdf["neighbourh"] = gdf["neighbourh"].astype(int)
 gdf.set_index("neighbourh", inplace=True)
 
 YEARS = ["2022", "2023", "2024", "2025"]
-transformer = Transformer.from_crs(3857, 4326)
+
+# Data files from different years use different coordinate reference systems (CRS).
+# Older files (2022–2024) use a local projected CRS while the most recent file
+# (2025) is in Web Mercator.  All geometries must end up in WGS84 (EPSG:4326).
+YEAR_CRS = {
+    # Older CSV files from 2022–2024 use the same projected CRS. Based on the
+    # coordinates provided by the City of Edmonton, that CRS is "NAD83 / Alberta
+    # 3TM ref merid 114 W" (EPSG:3776).
+    "2022": 3776,
+    "2023": 3776,
+    "2024": 3776,
+    # Newer files (2025 and beyond) are published in Web Mercator.
+    "2025": 3857,
+}
 
 def load_data(year: str) -> gpd.GeoDataFrame:
     """Load the CSV data for the provided year and spatially join it."""
     data_path = f"./data/edmonton_safety_data_{year}.csv"
     data = pd.read_csv(data_path)
-    data["coordinates"] = data.apply(
-        lambda x: transformer.transform(x["x"], x["y"]), axis=1
-    )
+
+    # Determine the CRS to use for this year's data and convert to WGS84.
+    crs_from = YEAR_CRS.get(year, 4326)
     points = gpd.GeoDataFrame(
-        data, geometry=gpd.points_from_xy(data.coordinates.str[1], data.coordinates.str[0])
-    )
+        data,
+        geometry=gpd.points_from_xy(data["x"], data["y"]),
+        crs=f"EPSG:{crs_from}",
+    ).to_crs("EPSG:4326")
+
     joined = gpd.sjoin(points, gdf, how="inner", predicate="within")
     return joined
 
